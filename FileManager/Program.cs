@@ -2,6 +2,7 @@
 using FileManager.Commands;
 
 var handler = new PathHandler();
+var keyboardManager = new KeyboardManager();
 
 Dictionary<string, ICommand> commands = new Dictionary<string, ICommand>()
 {
@@ -20,25 +21,56 @@ Dictionary<string, ICommand> commands = new Dictionary<string, ICommand>()
     { "exit", new ExitCommand() }
 };
 
+keyboardManager._prefix = handler.CurrentPath;
+
 while (true)
 {
-    Console.Write($"{handler.CurrentPath} > ");
-    string userInput = Console.ReadLine();
-
-    if (string.IsNullOrEmpty(userInput))
+    ConsoleKeyInfo key = Console.ReadKey(true);
+    if (key.Key == ConsoleKey.Enter)
     {
-        continue;
+        if (keyboardManager.NewLine())
+        {
+
+            var commandLine = keyboardManager.BufferToCommand();
+            keyboardManager.ClearBuffer();
+            keyboardManager.NewLine();
+            
+            if (commands.TryGetValue(commandLine[0], out ICommand command))
+            {
+                string[] arg = commandLine.Skip(1).ToArray();
+                await command.Execute(handler, arg);
+                keyboardManager._prefix = handler.CurrentPath;
+            }
+            else
+            {
+                Console.WriteLine("Command not found");
+            }
+        }
+    } else if (key.Key == ConsoleKey.Tab)
+    {
+        var commandLine = keyboardManager.BufferToCommand()[0];
+        
+        
+        var completions = commands.ToList().Where(x => x.Key.StartsWith(commandLine)).Select(x => x.Key).ToList();
+        
+        if (completions.Count == 1)
+        {
+            keyboardManager.ClearBuffer();
+            keyboardManager.UpdateConsole();
+            
+            Console.Write(completions[0]);
+            
+            keyboardManager.AddChars(completions[0].ToCharArray());
+        }
     }
-    
-    string commandName = userInput.Split(' ')[0].ToLower();
-
-    if (commands.TryGetValue(commandName, out ICommand command))
+    else if (key.Key == ConsoleKey.Backspace)
     {
-        string[] arg = userInput.Split(' ').Skip(1).ToArray();
-        await command.Execute(handler, arg);
+        keyboardManager.RemoveLastChar();
     }
     else
     {
-        Console.WriteLine("Command not found");
+        keyboardManager.AddChar(key.KeyChar);
     }
+    
+    keyboardManager.UpdateConsole();
 }

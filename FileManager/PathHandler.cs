@@ -6,29 +6,27 @@ public class PathHandler
 
     public void PrintCurrentPath() => Console.WriteLine(CurrentPath);
     
-    public void TryChangePath(string path)
+    public void TryChangePath(string newPath)
     {
-        if (!Directory.Exists(path))
+        string potentialPath;
+        if (Path.IsPathRooted(newPath))
+        {
+            potentialPath = newPath;
+        }
+        else
+        {
+            potentialPath = Path.Combine(CurrentPath, newPath);
+        }
+
+        if (!Directory.Exists(potentialPath))
         {
             Console.ForegroundColor = (ConsoleColor)FileTypeColors.Error;
             Console.WriteLine("Directory not found");
+            Console.ResetColor();
             return;
         }
         
-        CurrentPath = path;
-    }
-
-    public void TryGoBack()
-    {
-        if (CurrentPath == Path.GetPathRoot(CurrentPath))
-        {
-            Console.ForegroundColor = (ConsoleColor)FileTypeColors.Error;
-            Console.WriteLine("You can't go back");
-            Console.ResetColor();       
-            return;       
-        }
-        string parentPath = Path.GetDirectoryName(CurrentPath)!;
-        TryChangePath(parentPath);       
+        CurrentPath = Path.GetFullPath(potentialPath);
     }
     
     public void GoUserFolder() => TryChangePath(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));

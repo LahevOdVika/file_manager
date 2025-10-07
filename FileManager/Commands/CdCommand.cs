@@ -8,14 +8,9 @@ public class CdCommand : ICommand
         {
             handler.GoUserFolder();
         } 
-        else if (args[0] == "..")
-        {
-            handler.TryGoBack();
-        }
         else
         {
-            string fullPath = Path.Combine(handler.CurrentPath, args[0]);
-            handler.TryChangePath(fullPath);
+            handler.TryChangePath(args[0]);
         }
         return Task.CompletedTask;
     }
